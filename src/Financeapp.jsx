@@ -711,7 +711,7 @@ export default function Financeapp() {
                 WhatsApp Me
               </span>
               <a
-                href="https://wa.me/https://wa.link/d8u6pv"
+                href="https://wa.me/6283129195737"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-emerald-400 transition-colors block"
