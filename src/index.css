@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+/* Kode custom kamu yang lain di bawahnya... */
 
 /* Kustomisasi Background Body Remang Merah Muda Dominan Putih */
 .modern-bg {

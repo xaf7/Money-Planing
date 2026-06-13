@@ -68,7 +68,7 @@ const defaultSavings = [
   },
 ];
 
-export default function FinanceApp() {
+export default function Financeapp() {
   // Ambil Google Fonts Nunito secara dinamis
   useEffect(() => {
     const link = document.createElement("link");
