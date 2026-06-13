@@ -711,12 +711,12 @@ export default function Financeapp() {
                 WhatsApp Me
               </span>
               <a
-                href="https://wa.me/6281234567890"
+                href="https://wa.me/https://wa.link/d8u6pv"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-emerald-400 transition-colors block"
               >
-                +62 812-3456-7890
+                +62 831-2919-5737
               </a>
             </div>
 
@@ -726,12 +726,12 @@ export default function Financeapp() {
                 Follow Instagram
               </span>
               <a
-                href="https://instagram.com/xaf_money"
+                href="https://instagram.com/agus_prs17"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-cyan-400 transition-colors block uppercase"
               >
-                @xaf_planmoney
+                @agus_prs17
               </a>
             </div>
           </div>
@@ -746,8 +746,7 @@ export default function Financeapp() {
               . All Rights Reserved.
             </div>
             <div className="flex items-center gap-1">
-              Engine by{" "}
-              <span className="text-slate-300 font-black">Xaf Dev Studio</span>
+              Engine by <span className="text-slate-300 font-black">Xaf 7</span>
             </div>
           </div>
         </div>
