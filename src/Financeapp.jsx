@@ -4,7 +4,7 @@ import logoApp from "./logo.png";
 // --- IMPORT FILE SUARA ---
 import almakSound from "./almak.mp3";
 
-// Default data jika Local Storage kosong murni saat pertama kali web dibuka
+// State awal dibuat kosong murni agar tidak ada nominal/riwayat bawaan saat pertama kali dibuka
 const defaultTransactions = [];
 const defaultSavings = [];
 
@@ -20,9 +20,9 @@ export default function Financeapp() {
 
   // --- LOGIKA UTAMA SOUND NOTIFIKASI ---
   const playNotificationSound = () => {
-    const audio = new Audio(almakSound); // Menggunakan file audio hasil import di atas
+    const audio = new Audio(almakSound);
     audio.currentTime = 0;
-    audio.volume = 0.6; // Set volume di 60%
+    audio.volume = 0.6;
     audio.play().catch((err) => {
       console.log("Audio play diblokir oleh kebijakan interaksi browser:", err);
     });
@@ -61,7 +61,7 @@ export default function Financeapp() {
   const [newPlanTarget, setNewPlanTarget] = useState("");
   const [newPlanGoalDisplay, setNewPlanGoalDisplay] = useState("");
   const [newPlanIcon, setNewPlanIcon] = useState("🎯");
-  const [newPlanImage, setNewPlanImage] = useState(null); // Image base64 string opsional
+  const [newPlanImage, setNewPlanImage] = useState(null);
 
   // Pop-up / Modal States
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
@@ -600,78 +600,86 @@ export default function Financeapp() {
                   📊 Kemajuan Rencana Tabungan
                 </h3>
                 <div className="space-y-4">
-                  {savingsPlans.map((plan) => {
-                    const pct = Math.min(
-                      Math.round((plan.current / plan.goal) * 100),
-                      100,
-                    );
-                    return (
-                      <div
-                        key={plan.id}
-                        className="p-4 bg-gradient-to-br from-slate-50 to-emerald-50/10 rounded-2xl border border-slate-100 space-y-3 relative shadow-sm overflow-hidden"
-                      >
-                        <button
-                          onClick={() => handleDeletePlan(plan.id)}
-                          className="absolute top-3 right-3 text-xs opacity-40 hover:opacity-100 z-10 bg-white/80 p-1 rounded-full shadow-sm"
+                  {savingsPlans.length === 0 ? (
+                    <div className="p-10 text-center text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed">
+                      Belum ada target impian yang dibuat.
+                    </div>
+                  ) : (
+                    savingsPlans.map((plan) => {
+                      const pct = Math.min(
+                        Math.round((plan.current / plan.goal) * 100),
+                        100,
+                      );
+                      return (
+                        <div
+                          key={plan.id}
+                          className="p-4 bg-gradient-to-br from-slate-50 to-emerald-50/10 rounded-2xl border border-slate-100 space-y-3 relative shadow-sm overflow-hidden"
                         >
-                          ❌
-                        </button>
-
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-3">
-                            {plan.image ? (
-                              <img
-                                src={plan.image}
-                                alt={plan.target}
-                                className="w-11 h-11 rounded-xl object-cover shadow-md border-2 border-white"
-                              />
-                            ) : (
-                              <span className="text-xl p-1.5 bg-white rounded-xl shadow-sm border">
-                                {plan.icon}
-                              </span>
-                            )}
-
-                            <div>
-                              <h4 className="font-black text-xs text-slate-800">
-                                {plan.target}
-                              </h4>
-                              <span className="text-[9px] text-slate-400 font-bold">
-                                Celengan Aktif
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs font-black text-slate-700">
-                            {pct}%
-                          </span>
-                        </div>
-
-                        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-[#0F172A] transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          ></div>
-                        </div>
-
-                        <div className="flex justify-between text-[10px] font-black text-slate-400">
-                          <span>
-                            Tersedia: Rp {plan.current.toLocaleString("id-ID")}
-                          </span>
-                          <span>
-                            Goal: Rp {plan.goal.toLocaleString("id-ID")}
-                          </span>
-                        </div>
-
-                        <div className="pt-2 flex justify-end">
                           <button
-                            onClick={() => setActivePlanForSaving(plan)}
-                            className="text-[10px] bg-[#0F172A] text-white px-3 py-1.5 rounded-lg font-black hover:bg-slate-800 shadow-sm"
+                            onClick={() => handleDeletePlan(plan.id)}
+                            className="absolute top-3 right-3 text-xs opacity-40 hover:opacity-100 z-10 bg-white/80 p-1 rounded-full shadow-sm"
                           >
-                            💰 Sesuaikan Dana Celengan
+                            ❌
                           </button>
+
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                              {plan.image ? (
+                                <img
+                                  src={plan.image}
+                                  alt={plan.target}
+                                  className="w-11 h-11 rounded-xl object-cover shadow-md border-2 border-white"
+                                />
+                              ) : (
+                                <span className="text-xl p-1.5 bg-white rounded-xl shadow-sm border">
+                                  {plan.icon}
+                                  //{" "}
+                                </span>
+                              )}
+
+                              <div>
+                                <h4 className="font-black text-xs text-slate-800">
+                                  {plan.target}
+                                </h4>
+                                <span className="text-[9px] text-slate-400 font-bold">
+                                  Celengan Aktif
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-slate-700">
+                              {pct}%
+                            </span>
+                          </div>
+
+                          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 to-[#0F172A] transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            ></div>
+                          </div>
+
+                          <div className="flex justify-between text-[10px] font-black text-slate-400">
+                            <span>
+                              Tersedia: Rp{" "}
+                              {plan.current.toLocaleString("id-ID")}
+                            </span>
+                            <span>
+                              Goal: Rp {plan.goal.toLocaleString("id-ID")}
+                            </span>
+                          </div>
+
+                          <div className="pt-2 flex justify-end">
+                            <button
+                              onClick={() => setActivePlanForSaving(plan)}
+                              className="text-[10px] bg-[#0F172A] text-white px-3 py-1.5 rounded-lg font-black hover:bg-slate-800 shadow-sm"
+                            >
+                              💰 Sesuaikan Dana Celengan
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -679,7 +687,7 @@ export default function Financeapp() {
         </main>
       </div>
 
-      {/* --- PREMIUM DARK FOOTER (STYLE ADAPTASI DARI IMAGE_C57F9A.PNG) --- */}
+      {/* --- PREMIUM DARK FOOTER ADAPTASI DARI IMAGE_C57F9A.PNG --- */}
       <footer className="bg-[#0F172A] text-white border-t border-slate-800 pt-10 pb-6 px-6 mt-10 rounded-t-[2.5rem] shadow-2xl">
         <div className="max-w-md mx-auto space-y-8">
           {/* BAGIAN ATAS FOOTER: KATA-KATA AJAKAN FINANSIAL */}
@@ -703,12 +711,12 @@ export default function Financeapp() {
                 WhatsApp Me
               </span>
               <a
-                href="https://wa.link/vgp81r"
+                href="https://wa.me/6281234567890"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-emerald-400 transition-colors block"
               >
-                +62 831-2919-5737
+                +62 812-3456-7890
               </a>
             </div>
 
@@ -718,12 +726,12 @@ export default function Financeapp() {
                 Follow Instagram
               </span>
               <a
-                href="https://instagram.com/agus_prs17"
+                href="https://instagram.com/xaf_money"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-cyan-400 transition-colors block uppercase"
               >
-                @agus_prs17
+                @xaf_planmoney
               </a>
             </div>
           </div>
@@ -738,7 +746,8 @@ export default function Financeapp() {
               . All Rights Reserved.
             </div>
             <div className="flex items-center gap-1">
-              Engine by <span className="text-slate-300 font-black">Xaf 7</span>
+              Engine by{" "}
+              <span className="text-slate-300 font-black">Xaf Dev Studio</span>
             </div>
           </div>
         </div>
