@@ -4,7 +4,6 @@ import logoApp from "./logo.png";
 // --- IMPORT FILE SUARA ---
 import almakSound from "./almak.mp3";
 
-// State awal dibuat kosong murni agar tidak ada nominal/riwayat bawaan saat pertama kali dibuka
 const defaultTransactions = [];
 const defaultSavings = [];
 
@@ -42,6 +41,33 @@ export default function Financeapp() {
     return saved ? JSON.parse(saved) : defaultSavings;
   });
 
+  // STATE SALDO & TOTAL MASUK (GLOBAL STATIS)
+  const [globalBalance, setGlobalBalance] = useState(() => {
+    const saved = localStorage.getItem("xaf_global_balance");
+    return saved ? parseFloat(saved) : 0;
+  });
+
+  const [totalIncome, setTotalIncome] = useState(() => {
+    const saved = localStorage.getItem("xaf_total_income");
+    return saved ? parseFloat(saved) : 0;
+  });
+
+  // STATE TOTAL KELUAR DIPISAH PER PERIODE TAB (STATIS & TERKUNCI)
+  const [expenseHarian, setExpenseHarian] = useState(() => {
+    const saved = localStorage.getItem("xaf_expense_harian");
+    return saved ? parseFloat(saved) : 0;
+  });
+
+  const [expenseMingguan, setExpenseMingguan] = useState(() => {
+    const saved = localStorage.getItem("xaf_expense_mingguan");
+    return saved ? parseFloat(saved) : 0;
+  });
+
+  const [expenseBulanan, setExpenseBulanan] = useState(() => {
+    const saved = localStorage.getItem("xaf_expense_bulanan");
+    return saved ? parseFloat(saved) : 0;
+  });
+
   // Efek simpan otomatis ke Local Storage setiap kali data berubah
   useEffect(() => {
     localStorage.setItem("xaf_transactions", JSON.stringify(transactions));
@@ -50,6 +76,26 @@ export default function Financeapp() {
   useEffect(() => {
     localStorage.setItem("xaf_savings", JSON.stringify(savingsPlans));
   }, [savingsPlans]);
+
+  useEffect(() => {
+    localStorage.setItem("xaf_global_balance", globalBalance.toString());
+  }, [globalBalance]);
+
+  useEffect(() => {
+    localStorage.setItem("xaf_total_income", totalIncome.toString());
+  }, [totalIncome]);
+
+  useEffect(() => {
+    localStorage.setItem("xaf_expense_harian", expenseHarian.toString());
+  }, [expenseHarian]);
+
+  useEffect(() => {
+    localStorage.setItem("xaf_expense_mingguan", expenseMingguan.toString());
+  }, [expenseMingguan]);
+
+  useEffect(() => {
+    localStorage.setItem("xaf_expense_bulanan", expenseBulanan.toString());
+  }, [expenseBulanan]);
 
   // Form Input States
   const [newDesc, setNewDesc] = useState("");
@@ -68,7 +114,7 @@ export default function Financeapp() {
   const [selectedItemsToClear, setSelectedItemsToClear] = useState({});
   const [showAllHistory, setShowAllHistory] = useState(false);
 
-  // State Baru: Modal Kustom Cantik untuk Dana/Saldo Tidak Cukup
+  // State: Modal Kustom Cantik untuk Dana/Saldo Tidak Cukup
   const [insufficientBalanceModal, setInsufficientBalanceModal] = useState({
     isOpen: false,
     title: "",
@@ -79,16 +125,7 @@ export default function Financeapp() {
   const [activePlanForSaving, setActivePlanForSaving] = useState(null);
   const [savingInputDisplay, setSavingInputDisplay] = useState("");
 
-  // --- LOGIKA UTAMA: SALDO GLOBAL TERHUBUNG ---
-  const globalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((acc, curr) => acc + curr.amount, 0);
-  const globalExpense = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((acc, curr) => acc + curr.amount, 0);
-  const globalBalance = globalIncome - globalExpense;
-
-  // Filter Data Transaksi Berdasarkan Tab
+  // Filter Data Transaksi Berdasarkan Tab Aktif
   const filteredTransactions = transactions.filter(
     (t) => t.period === activeTab,
   );
@@ -116,7 +153,7 @@ export default function Financeapp() {
     return parseFloat(formattedValue.replace(/\./g, ""));
   };
 
-  // Handler Konversi File Gambar Ke Base64 String (Opsional)
+  // Handler Konversi File Gambar Ke Base64 String
   const handleImageUploadChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -139,11 +176,13 @@ export default function Financeapp() {
     reader.readAsDataURL(file);
   };
 
-  // Handler Simpan Catatan Baru + VALIDASI SALDO MODERN
+  // Handler Simpan Catatan Baru + Akumulasi Pisah Kategori Keluar
   const handleAddTransaction = (e) => {
     e.preventDefault();
     const rawAmount = getCleanRawNumber(newAmountDisplay);
     if (!newDesc || rawAmount <= 0) return;
+
+    const currentPeriod = activeTab === "planning" ? "harian" : activeTab;
 
     if (newType === "expense" && rawAmount > globalBalance) {
       setInsufficientBalanceModal({
@@ -160,8 +199,23 @@ export default function Financeapp() {
       amount: rawAmount,
       type: newType,
       category: newCategory,
-      period: activeTab === "planning" ? "harian" : activeTab,
+      period: currentPeriod,
     };
+
+    // Update Saldo Utama, Total Masuk (Global), atau Total Keluar (Sesuai Tab)
+    if (newType === "income") {
+      setGlobalBalance((prev) => prev + rawAmount);
+      setTotalIncome((prev) => prev + rawAmount);
+    } else {
+      setGlobalBalance((prev) => prev - rawAmount);
+      // Akumulasikan ke state pengeluaran spesifik periode tab tersebut
+      if (currentPeriod === "harian")
+        setExpenseHarian((prev) => prev + rawAmount);
+      if (currentPeriod === "mingguan")
+        setExpenseMingguan((prev) => prev + rawAmount);
+      if (currentPeriod === "bulanan")
+        setExpenseBulanan((prev) => prev + rawAmount);
+    }
 
     setTransactions([newTx, ...transactions]);
     playNotificationSound();
@@ -170,7 +224,7 @@ export default function Financeapp() {
     setNewAmountDisplay("");
   };
 
-  // Handler Tambah Rencana Target Baru dengan Gambar Opsional
+  // Handler Tambah Rencana Target Baru
   const handleAddPlan = (e) => {
     e.preventDefault();
     const rawGoal = getCleanRawNumber(newPlanGoalDisplay);
@@ -194,7 +248,7 @@ export default function Financeapp() {
     if (fileInput) fileInput.value = null;
   };
 
-  // Modifikasi isi tabungan target + Sinkron Saldo Global
+  // Modifikasi isi tabungan target + Sinkron Saldo & Pengeluaran Harian
   const handleUpdateSavingBalance = (isAdding) => {
     const rawAmount = getCleanRawNumber(savingInputDisplay);
     if (rawAmount <= 0 || !activePlanForSaving) return;
@@ -225,8 +279,16 @@ export default function Financeapp() {
       amount: rawAmount,
       type: isAdding ? "expense" : "income",
       category: "Umum",
-      period: "harian",
+      period: "harian", // Transaksi celengan otomatis dialokasikan ke log harian
     };
+
+    if (isAdding) {
+      setGlobalBalance((prev) => prev - rawAmount);
+      setExpenseHarian((prev) => prev + rawAmount);
+    } else {
+      setGlobalBalance((prev) => prev + rawAmount);
+      setTotalIncome((prev) => prev + rawAmount);
+    }
 
     setTransactions([autoTx, ...transactions]);
 
@@ -264,6 +326,7 @@ export default function Financeapp() {
     setSelectedItemsToClear((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Menghapus log riwayat tanpa mempengaruhi variabel nominal di atas (Terkunci aman!)
   const executeClearSelected = () => {
     const idsToRemove = Object.keys(selectedItemsToClear).filter(
       (id) => selectedItemsToClear[id],
@@ -282,12 +345,19 @@ export default function Financeapp() {
     if (selectedTxId === id) setSelectedTxId(null);
   };
 
+  // Fungsi pembantu untuk menentukan nominal pengeluaran mana yang harus dirender di card atas
+  const getCurrentExpenseDisplay = () => {
+    if (activeTab === "harian") return expenseHarian;
+    if (activeTab === "mingguan") return expenseMingguan;
+    if (activeTab === "bulanan") return expenseBulanan;
+    return expenseHarian; // Default/planning fallback
+  };
+
   return (
     <div
       className="min-h-screen modern-bg text-[#1E293B] antialiased flex flex-col justify-between"
       style={{ fontFamily: "'Nunito', sans-serif" }}
     >
-      {/* ATAS & TENGAH: CONTENT WRAPPER */}
       <div>
         {/* HEADER BANNER APP */}
         <nav className="bg-[#0F172A] sticky top-0 z-40 shadow-xl rounded-b-[2rem] border-b border-slate-800 px-5 pt-4 pb-5">
@@ -304,7 +374,7 @@ export default function Financeapp() {
                     Xaf Plan Money
                   </h1>
                   <span className="text-[10px] text-emerald-400 font-black tracking-widest uppercase mt-1 block">
-                    Engine V1.4 Active
+                    Engine V1.5 Active
                   </span>
                 </div>
               </div>
@@ -312,7 +382,7 @@ export default function Financeapp() {
               <div className="flex items-center space-x-2 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700/50">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                  Local Storage & Sound
+                  Multi-Period Mode
                 </span>
               </div>
             </div>
@@ -341,37 +411,43 @@ export default function Financeapp() {
 
         {/* BODY KONTEN UTAMA */}
         <main className="max-w-md mx-auto px-4 pt-5 pb-12 space-y-5">
-          {/* CARD RINGKASAN SALDO GLOBAL */}
+          {/* CARD SUMMARY UTAMA DENGAN DYNAMIC EXPENSE PER PERIODE */}
           <div className="bg-white p-6 rounded-[2.2rem] shadow-2xl border border-slate-100 space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
                 Sisa Saldo Dompet (Global)
               </span>
               <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full uppercase">
-                Sinkron
+                Terkunci
               </span>
             </div>
             <div className="text-3xl font-black tracking-tight text-slate-800">
               Rp {globalBalance.toLocaleString("id-ID")}
             </div>
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
                   Total Masuk
                 </p>
-                <p className="text-xs font-extrabold text-emerald-600">
-                  +{globalIncome.toLocaleString("id-ID")}
+                <p className="text-sm font-black text-emerald-600">
+                  +Rp {totalIncome.toLocaleString("id-ID")}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">
-                  Total Keluar
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                  Total Keluar (
+                  {activeTab === "planning" ? "harian" : activeTab})
                 </p>
-                <p className="text-xs font-extrabold text-rose-500">
-                  -{globalExpense.toLocaleString("id-ID")}
+                <p className="text-sm font-black text-rose-500">
+                  -Rp {getCurrentExpenseDisplay().toLocaleString("id-ID")}
                 </p>
               </div>
             </div>
+
+            <p className="text-[10px] font-bold text-slate-400 italic text-center pt-1 block">
+              *Mengapus log riwayat tidak akan merestart angka-angka di atas.
+            </p>
           </div>
 
           {activeTab !== "planning" && (
@@ -633,7 +709,6 @@ export default function Financeapp() {
                               ) : (
                                 <span className="text-xl p-1.5 bg-white rounded-xl shadow-sm border">
                                   {plan.icon}
-                                  //{" "}
                                 </span>
                               )}
 
@@ -687,10 +762,9 @@ export default function Financeapp() {
         </main>
       </div>
 
-      {/* --- PREMIUM DARK FOOTER ADAPTASI DARI IMAGE_C57F9A.PNG --- */}
+      {/* --- PREMIUM DARK FOOTER --- */}
       <footer className="bg-[#0F172A] text-white border-t border-slate-800 pt-10 pb-6 px-6 mt-10 rounded-t-[2.5rem] shadow-2xl">
         <div className="max-w-md mx-auto space-y-8">
-          {/* BAGIAN ATAS FOOTER: KATA-KATA AJAKAN FINANSIAL */}
           <div className="space-y-2">
             <h2 className="text-xl font-black tracking-tight text-white uppercase leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
               Let's Control Your <br />
@@ -703,40 +777,36 @@ export default function Financeapp() {
             </p>
           </div>
 
-          {/* BAGIAN TENGAH FOOTER: KOLOM INFORMASI KONTAK */}
           <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-800/60">
-            {/* SISI KIRI: WHATSAPP DEVELOPER */}
             <div className="space-y-1">
               <span className="text-[9px] font-black tracking-widest text-slate-500 uppercase block">
                 WhatsApp Me
               </span>
               <a
-                href="https://wa.me/6283129195737"
+                href="https://wa.me/6281234567890"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-emerald-400 transition-colors block"
               >
-                +62 831-2919-5737
+                +62 812-3456-7890
               </a>
             </div>
 
-            {/* SISI KANAN: INSTAGRAM DEVELOPER */}
             <div className="space-y-1">
               <span className="text-[9px] font-black tracking-widest text-slate-500 uppercase block">
                 Follow Instagram
               </span>
               <a
-                href="https://instagram.com/agus_prs17"
+                href="https://instagram.com/xaf_money"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-slate-200 hover:text-cyan-400 transition-colors block uppercase"
               >
-                @agus_prs17
+                @xaf_planmoney
               </a>
             </div>
           </div>
 
-          {/* BAGIAN BAWAH FOOTER: COPYRIGHT & BRANDING */}
           <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-bold gap-2">
             <div>
               &copy; 2026,{" "}
@@ -746,7 +816,8 @@ export default function Financeapp() {
               . All Rights Reserved.
             </div>
             <div className="flex items-center gap-1">
-              Engine by <span className="text-slate-300 font-black">Xaf 7</span>
+              Engine by{" "}
+              <span className="text-slate-300 font-black">Xaf Dev Studio</span>
             </div>
           </div>
         </div>
@@ -754,7 +825,7 @@ export default function Financeapp() {
 
       {/* POP-UP PREMIUM DIALOG MODAL: KETIKA SALDO TIDAK CUKUP */}
       {insufficientBalanceModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md px-4 animate-overlay-fade">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-md px-4 animate-overlay-fade">
           <div className="bg-slate-900 text-white w-full max-w-sm rounded-[2.5rem] p-6 text-center space-y-5 border border-slate-800 shadow-2xl transform animate-modal-shake">
             <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner animate-bounce">
               ⚠️
@@ -782,7 +853,6 @@ export default function Financeapp() {
           </div>
         </div>
       )}
-
       {/* POP-UP MODAL UPDATE DANA CELENGAN */}
       {activePlanForSaving && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
